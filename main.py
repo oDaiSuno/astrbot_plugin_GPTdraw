@@ -466,7 +466,7 @@ class MyPlugin(Star):
                 chain = [
                     Comp.At(qq=event.get_sender_id()),  # At 消息发送者
                     Comp.Plain(
-                        "🧑‍🎨 嘿嘿嘿，我画好咯~请往下看...吗？桥豆麻袋，怎么有点瑕疵，让我再修补一下!"
+                        "🧑‍🎨 嘿嘿嘿，我画好咯~请往下看...吗？\n 😥 桥豆麻袋，怎么有点瑕疵，让我再修补一下!"
                     ),
                 ]
                 yield event.chain_result(chain)
@@ -491,7 +491,7 @@ class MyPlugin(Star):
                     chain.append(Comp.Image.fromURL(final_url))
                 yield event.chain_result(chain)
             else:
-                yield event.plain_result(f"😭 糟糕，图片生成失败了，请稍后再试。")
+                yield event.plain_result(f"😭 糟糕，没画完，请稍后再试啦。")
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
