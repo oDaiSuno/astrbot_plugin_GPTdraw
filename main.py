@@ -412,13 +412,19 @@ class MyPlugin(Star):
                         你需要从用户的描述中提取其真实的绘画意图，并用常见的LLM绘画提示词进行标准化处理。同时提供中英文版本以便对照。
                         有时用户会在指令最后加上--size，此时你需要识别用户指定的size，可供选择的范围："auto", "2:3", "3:2", "1:1"，
                         如果用户没有指定或不在范围内，则默认"auto"。
-                        注意：直接严格输出json格式字典，格式如下：{"chinese_prompt": "已标准化后的中文prompt", "english_prompt": "已标准化后的English prompt", "size": "auto"}
+                        注意：直接严格输出json格式字符串，格式示例如下：{"chinese_prompt": "已标准化后的中文prompt", "english_prompt": "已标准化后的English prompt", "size": "auto"}
                         不得输出任何其他多余内容！
                     """,
                 )
+                logger.info(f"llm_response: {llm_response.completion_text}")
                 # yield event.plain_result(llm_response.completion_text)
                 try:
-                    llm_response_json = json.loads(llm_response.completion_text)
+                    if "```json" in llm_response.completion_text:
+                        llm_response_json = json.loads(
+                            llm_response.completion_text.split("```json")[1].split("```")[0]
+                        )
+                    else:
+                        llm_response_json = json.loads(llm_response.completion_text)
                 except json.JSONDecodeError:
                     llm_response = await self.context.get_using_provider().text_chat(
                         f"本次用户希望翻译的内容为：{message}",
@@ -448,7 +454,7 @@ class MyPlugin(Star):
             yield event.plain_result(f"🧑‍🎨 我已经开始画画啦，请稍等...")
 
             # 优化进度显示：只在关键节点显示，更加用户友好
-            progress_thresholds = [3, 20, 45]
+            progress_thresholds = [15, 30, 75]
             shown_progress = set()
             final_url = None
 
@@ -465,11 +471,11 @@ class MyPlugin(Star):
                     ):
                         shown_progress.add(threshold)
                         progress_bar = create_progress_bar(progress)
-                        if threshold == 3:
+                        if threshold == 15:
                             yield event.plain_result(f"🎨 构思中... {progress_bar}")
-                        elif threshold == 20:
+                        elif threshold == 30:
                             yield event.plain_result(f"✨ 精细绘制中... {progress_bar}")
-                        elif threshold >= 45:
+                        elif threshold >= 75:
                             yield event.plain_result(f"🔥 即将完成... {progress_bar}")
                         break
 
