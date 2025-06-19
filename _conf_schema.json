@@ -1,0 +1,8 @@
+{
+    "proxies": {
+        "description": "代理池",
+        "type": "string",
+        "hint": "代理池配置，格式类似于 http://127.0.0.1:7890",
+        "obvious_hint": true
+    }
+}

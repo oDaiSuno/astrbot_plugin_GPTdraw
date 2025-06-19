@@ -1,5 +1,6 @@
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
+from astrbot.api import AstrBotConfig
 import astrbot.api.message_components as Comp
 from astrbot.api import logger
 import json
@@ -343,11 +344,12 @@ async def watermarkremover(filename):
                         print(f"成功删除临时文件: {filename}")
                 except OSError as e:
                     print(f"删除文件时出现错误: {e}")
-                time.sleep(1)
+                await asyncio.sleep(1)
                 return output
+            await asyncio.sleep(1)
         except Exception as e:
             print(e)
-            time.sleep(1)
+            await asyncio.sleep(1)
 
     return None
 
@@ -361,8 +363,16 @@ def create_progress_bar(progress, width=10):
 
 @register("drawGPT", "oDaiSuno", "一个简单的 GPT画图 插件", "0.0.1")
 class MyPlugin(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.config = config
+        logger.info(f"config: {self.config}")
+        global proxies
+        if self.config.get("proxies"):
+            proxies = {
+                "http": self.config.get("proxies"),
+                "https": self.config.get("proxies"),
+            }
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
@@ -425,7 +435,7 @@ class MyPlugin(Star):
 
                 yield event.plain_result(
                     f"🧑‍🎨 我懂了，我猜你想要画的是：{llm_response_json['chinese_prompt']}！\n"
-                    f"为此，我设计了更专业的prompt：{llm_response_json['english_prompt']}！\n"
+                    f"为此，我设计了更专业的prompt：{llm_response_json['english_prompt']}\n"
                     f"此次我们选择的size是：{llm_response_json['size']}！\n"
                     f"接下来，我会根据你的需求，开始绘制你的画作！"
                 )
@@ -476,17 +486,13 @@ class MyPlugin(Star):
                 if watermarked_image:
                     chain = [
                         Comp.At(qq=event.get_sender_id()),  # At 消息发送者
-                        Comp.Plain(
-                            "🧑‍🎨 这下彻底画完啦，请往下看！"
-                        ),
+                        Comp.Plain("🧑‍🎨 这下彻底画完啦，请往下看！"),
                     ]
                     chain.append(Comp.Image.fromURL(watermarked_image))
                 else:
                     chain = [
                         Comp.At(qq=event.get_sender_id()),  # At 消息发送者
-                        Comp.Plain(
-                            "😭 糟糕，图片修补失败了，只能给你一个半成品了..."
-                        ),
+                        Comp.Plain("😭 糟糕，图片修补失败了，只能给你一个半成品了..."),
                     ]
                     chain.append(Comp.Image.fromURL(final_url))
                 yield event.chain_result(chain)
